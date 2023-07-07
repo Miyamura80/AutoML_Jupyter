@@ -1,67 +1,65 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
-export const jupyter = () => {
+export const jupyter = async () => {
 
-  // Access to currently active editor
-  const {
-    activeTextEditor: { document },
-  } = vscode.window;
+  await readFirstMarkdownCell();
 
-  // Allow textual changes in the document
-  const workspaceEdit = new vscode.WorkspaceEdit();
-
-  // Get console logs and filter it
-  const logs = getConsoleLogs(document);
-  logs
-    .filter(log => log.badWordsCount > 0)
-    .forEach(log => {
-      workspaceEdit.replace(document.uri, log.range, log.purified);
-    });
-
-  // Left fold of the sum
-  const badWordsCount = logs.reduce(
-    (sum, log) => sum + log.badWordsCount,
-    0
-  );
-
-  vscode.workspace.applyEdit(workspaceEdit).then(() => {
-    badWordsCount
-      ? vscode.window.showInformationMessage(
-          `Number of bad words that were censored: ${badWordsCount} 🤬🤬🤬🤬`
-        )
-      : vscode.window.showInformationMessage(
-          'No bad words! 😇😇😇😇'
-        );
-    document.save();
-  });
 };
 
-const logRegex = /console\s*\.\s*log\([\s\S]*?\);/g;
+async function readFirstMarkdownCell(): Promise<void> {
 
-// For each console log, returns object consisting of
-// number of bad words, purified version, and vscode.Range
-const getConsoleLogs = (
-  document: vscode.TextDocument
-): Array<{
-  range: vscode.Range;
-  purified: string;
-  badWordsCount: number;
-}> => {
-  const documentText = document.getText();
-  let logStatements = [];
-
-  let match;
-  while ((match = logRegex.exec(documentText))) {
-    const matchRange = new vscode.Range(
-      document.positionAt(match.index),
-      document.positionAt(match.index + match[0].length)
-    );
-    const [purified, badWordsArray] = purify(match[0]);
-    logStatements.push({
-      purified,
-      badWordsCount: badWordsArray.length,
-      range: matchRange,
-    });
+  // Make sure a text editor is active
+  if (!vscode.window.activeTextEditor) {
+    console.log("No active text editor found");
+    return;
   }
-  return logStatements;
-};
+
+  // Get the active document
+  const document = vscode.window.activeTextEditor?.document;
+
+  const notebook: any = parseDocumentToJson(document!);
+
+
+  console.log(notebook);
+  // Traverse through the cells array
+  for (let cell of notebook.cells) {
+    // If this cell is a markdown cell
+    if (cell.cell_type === 'markdown') {
+      // Log the cell's content to the console and return
+      console.log(cell.source.join(''));
+      return;
+    }
+  }
+
+  // If we reached this point, there were no markdown cells in the notebook
+  console.log('No markdown cells found');
+}
+
+const parseDocumentToJson = (document: vscode.TextDocument) => {
+  // Make sure a document is open
+  if (!document) {
+    console.log("No active document found");
+    return;
+  }
+
+  // Read the entire file content
+  let fileContent: string;
+  try {
+    fileContent = fs.readFileSync(document.uri.fsPath, 'utf8');
+  } catch (err) {
+    console.error(`Error reading file: ${err}`);
+    return;
+  }
+
+  // Parse the content as JSON
+  let notebook: any;
+  try {
+    notebook = JSON.parse(fileContent);
+  } catch (err) {
+    console.error(`Error parsing JSON: ${err}`);
+    return;
+  }
+  return notebook;
+}
