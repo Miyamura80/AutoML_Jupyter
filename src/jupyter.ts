@@ -13,7 +13,7 @@ export async function initialWrite(code: string): Promise<void> {
   console.log('dummy write')
 }
 
-async function readFirstMarkdownCell(): Promise<void> {
+export async function readFirstMarkdownCell(): Promise<void> {
 
   // Make sure a text editor is active
   if (!vscode.window.activeTextEditor) {
@@ -28,20 +28,26 @@ async function readFirstMarkdownCell(): Promise<void> {
 
 
   console.log(notebook);
-  // Traverse through the cells array
-  for (let cell of notebook.cells) {
-    // If this cell is a markdown cell
-    if (cell.cell_type === 'markdown') {
-      // Log the cell's content to the console and return
-      const content = cell.source.join('');
-      console.log(content);
-      generateCode(content, 'http://google.com');
-      return;
+  
+  let foundMarkdown = false;
+  for (let i = 0; i < notebook.cells.length; i++) {
+    if (notebook.cells[i].cell_type === 'markdown') {
+      foundMarkdown = true;
+      continue;
+    }
+
+    if (foundMarkdown && notebook.cells[i].cell_type === 'code') {
+      const cellContent = notebook.cells[i].source.join('').trim();
+      if (!cellContent) {
+        notebook.cells[i].source = ["print(\"hello world\")"];
+      }
+      break;
     }
   }
 
-  // If we reached this point, there were no markdown cells in the notebook
-  console.log('No markdown cells found');
+  const newFileContent = JSON.stringify(notebook, null, 2);
+  fs.writeFileSync(document.uri.fsPath, newFileContent, 'utf8');
+
 }
 
 const parseDocumentToJson = (document: vscode.TextDocument) => {
