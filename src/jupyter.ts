@@ -50,21 +50,17 @@ export async function readFirstMarkdownCell(): Promise<void> {
   if (notebook.cells.indexOf(firstMarkdownCell) === notebook.cells.length - 1) {
     notebook.cells.push(blankCodeCell);
   } else if (notebook.cells[notebook.cells.indexOf(firstMarkdownCell) + 1].cell_type !== 'code') {
+    // TODO: This overrwrites the next cell, but we should insert a new cell instead
     notebook.cells.splice(notebook.cells.indexOf(firstMarkdownCell) + 1, 0, blankCodeCell);
   } 
 
-  // Get the text after the "!auto-jupyter" string
-  const command = firstMarkdownCell.source[0].trim().split(' ')[1];
+  // Get all the text after the "!auto-jupyter" string
+  const command = firstMarkdownCell.source[0].trim().slice("!auto-jupyter".length + 1);
 
-
-  // TODO: Delete this bit
-  notebook.cells[notebook.cells.indexOf(firstMarkdownCell) + 1].source = 'example code';
-  return;
-  
   // Post the command to the endpoint and catch errors
   let response: string;
   try {
-    response = (await axios.post(genCodeEndpoint, command)).data.result;
+    response = (await axios.post(genCodeEndpoint, null, {params: {prompt:command}})).data.response;
   } catch (err) {
     console.error(`Error posting to endpoint: ${err}`);
     return;

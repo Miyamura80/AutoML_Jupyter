@@ -78,13 +78,27 @@ async def generate_code(prompt: str, temperature: float = 0.5):
     """
     parameters = {
         "temperature": temperature,  # Temperature controls the degree of randomness in token selection.
-        # "max_output_tokens": 2048,  # Token limit determines the maximum amount of text output.
+        "max_output_tokens": 2048,  # Token limit determines the maximum amount of text output.
     }
+
+    # === Pre processing ===
+
+    # Add a prefix
+    prefix = "Write a pytorch model of the following description. Only output code.\n"
+
+    # ======================
 
     code_generation_model = CodeGenerationModel.from_pretrained("code-bison@001")
     response = code_generation_model.predict(
-        prefix="Write a pytorch model of the following description.", **parameters
+        prefix=prefix, **parameters
     )
 
+    # === Post processing ===
+
+    # Only get the text between "```python" and "```"
+    response_text = response.text.split("```python")[1].split("```")[0]
+
+    # =======================
+
     # Return the model's response
-    return {"response": response.text}
+    return {"response": response_text}
