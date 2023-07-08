@@ -1,6 +1,9 @@
 # IDE
 .vscode/
 
+# API Testing
+*.http
+
 # Logs
 logs
 *.log

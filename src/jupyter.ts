@@ -1,12 +1,17 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { generateCode } from './api';
 
 export const jupyter = async () => {
 
   await readFirstMarkdownCell();
 
 };
+
+export async function initialWrite(code: string): Promise<void> {
+  console.log('dummy write')
+}
 
 async function readFirstMarkdownCell(): Promise<void> {
 
@@ -28,7 +33,9 @@ async function readFirstMarkdownCell(): Promise<void> {
     // If this cell is a markdown cell
     if (cell.cell_type === 'markdown') {
       // Log the cell's content to the console and return
-      console.log(cell.source.join(''));
+      const content = cell.source.join('');
+      console.log(content);
+      generateCode(content, 'http://google.com');
       return;
     }
   }
