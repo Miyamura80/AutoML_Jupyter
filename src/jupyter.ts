@@ -28,8 +28,13 @@ export async function readFirstMarkdownCell(): Promise<void> {
 
   const notebook: any = parseDocumentToJson(document!);
 
+  console.log("Printing notebook:");
   console.log(notebook);
-  
+
+  /*
+  === NOTEBOOK STRUCTURE ===
+  */
+
   // Find the first markdown cell that begins with the string "!auto-jupyter" and if none found, return
   const firstMarkdownCell = notebook.cells.find((cell: any) => {
     return cell.cell_type === 'markdown' && cell.source[0].trim().startsWith('!auto-jupyter');
@@ -38,6 +43,8 @@ export async function readFirstMarkdownCell(): Promise<void> {
     console.log("No markdown cell found");
     return;
   }
+
+  console.log("Found markdown cell with !auto-jupyter, executing...");
 
   // Check if the next cell is a blank code cell and if not, insert a new code cell
   const blankCodeCell = {
@@ -54,29 +61,39 @@ export async function readFirstMarkdownCell(): Promise<void> {
   } 
 
   // Get the text after the "!auto-jupyter" string
-  const command = firstMarkdownCell.source[0].trim().split(' ')[1];
-
-
-  // TODO: Delete this bit
-  notebook.cells[notebook.cells.indexOf(firstMarkdownCell) + 1].source = 'example code';
-  return;
+  const command = firstMarkdownCell.source[0].trim().split(' ').slice(1).join(' ');
   
   // Post the command to the endpoint and catch errors
-  let response: string;
+  let response: any;
+  const temperature = 0.5;
+  
   try {
-    response = (await axios.post(genCodeEndpoint, command)).data.result;
-  } catch (err) {
-    console.error(`Error posting to endpoint: ${err}`);
+    console.log(`Posting command to endpoint... Command: ${command}`);
+    response = (await axios.post(genCodeEndpoint, {prompt: command, temperature: temperature}));
+  } catch (error: any) {
+    console.error("Error posting command to endpoint");
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+    } else if (error.request) {
+      console.error("Request data:", error.request);
+    } else {
+      console.error("Other error:", error.message);
+    }
     return;
   }
 
+  const codeOutput = response.data.response.choices[0].message.content;
+  console.log("Successfully posted command to endpoint, writing to file...");
+  console.log("=============================================================");
   // Insert the body of the result into the code cell
-  notebook.cells[notebook.cells.indexOf(firstMarkdownCell) + 1].source = response;
+  notebook.cells[notebook.cells.indexOf(firstMarkdownCell) + 1].source = codeOutput;
 
   const newFileContent = JSON.stringify(notebook, null, 2);
   fs.writeFileSync(document.uri.fsPath, newFileContent, 'utf8');
-
 }
+
+
 
 const parseDocumentToJson = (document: vscode.TextDocument) => {
   // Make sure a document is open
