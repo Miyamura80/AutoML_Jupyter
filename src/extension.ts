@@ -27,11 +27,11 @@ export function activate(context: vscode.ExtensionContext) {
 	); 
 	context.subscriptions.push(disposable2);
 
-	context.subscriptions.push(
-		vscode.workspace.onDidOpenTextDocument(readFirstMarkdownCell),
-		vscode.workspace.onDidSaveTextDocument(readFirstMarkdownCell),
-		vscode.workspace.onDidCloseTextDocument(readFirstMarkdownCell)
-	);
+	// context.subscriptions.push(
+	// 	vscode.workspace.onDidOpenTextDocument(readFirstMarkdownCell),
+	// 	vscode.workspace.onDidSaveTextDocument(readFirstMarkdownCell),
+	// 	vscode.workspace.onDidCloseTextDocument(readFirstMarkdownCell)
+	// );
 
 
 }
