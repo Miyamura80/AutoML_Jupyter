@@ -86,6 +86,8 @@ export async function readFirstMarkdownCell(): Promise<void> {
   const codeOutput = response.data.response.choices[0].message.content;
   console.log("Successfully posted command to endpoint, writing to file...");
   console.log("=============================================================");
+  // TODO: Check if there is empty code
+  // TODO: Delete !auto-jupyter line
   // Insert the body of the result into the code cell
   notebook.cells[notebook.cells.indexOf(firstMarkdownCell) + 1].source = codeOutput;
 
