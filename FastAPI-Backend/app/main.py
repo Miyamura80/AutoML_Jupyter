@@ -90,16 +90,34 @@ async def generate_code(item: Item):
     """
     temperature = item.temperature
     prompt = item.prompt
-    print("we're in the code part for /code")
-    print(prompt)
-    print("====================================================")
     parameters = {
         "temperature": temperature,  # Temperature controls the degree of randomness in token selection.
-        # "max_output_tokens": 2048,  # Token limit determines the maximum amount of text output.
+        "max_output_tokens": 2048,  # Token limit determines the maximum amount of text output.
     }
+    content = f"Please write me pytorch code to {prompt}.Please only give code, and no comments or explanations."
 
     # Call the model
-    response = llm_inference(parameters, prompt)
+    response = llm_inference(parameters, content)
+
+    # Return the model's response
+    return {"response": response}
+
+@app.post("/summarize")
+async def summarize_code(item: Item):
+    """
+    Endpoint to handle code summarization.
+    Receives a message from the user, processes it, and returns a response from the model.
+    """
+    temperature = item.temperature
+    prompt = item.prompt
+    parameters = {
+        "temperature": temperature,  # Temperature controls the degree of randomness in token selection.
+        "max_output_tokens": 100,  # Token limit determines the maximum amount of text output.
+    }
+    content = f"Please write a markdown title for pytorch code in {prompt}."
+
+    # Call the model
+    response = llm_inference(parameters, content)
 
     # Return the model's response
     return {"response": response}
@@ -107,19 +125,18 @@ async def generate_code(item: Item):
 def llm_google(parameters, prompt):
     code_generation_model = CodeGenerationModel.from_pretrained("code-bison@001")
     response = code_generation_model.predict(
-        prefix="Write a pytorch model of the following description.", **parameters
+        prefix=prefix, **parameters
     )
     return response.text
 
-def llm_inference(parameters, prompt):
+def llm_inference(parameters, content):
     response = openai.ChatCompletion.create(
         # model="gpt-4",
         model="gpt-3.5-turbo",
         messages=[
             {
             "role": "user",
-            "content": f"Please write me pytorch code to {prompt}. \
-            \nPlease only give code, and not comments or explanations."
+            "content": content,
             }
         ],
         temperature=parameters["temperature"],
