@@ -26,71 +26,71 @@ export async function jupyter(): Promise<void> {
   console.log("Printing notebook:");
   console.log(notebook);
 
-  console.log("Server connection");
-  // Start a new Jupyter server
-  let jupyter = await spawn('jupyter', ['notebook', '--no-browser'], { cwd: editorDir });
+  // console.log("Server connection");
+  // // Start a new Jupyter server
+  // let jupyter = await spawn('jupyter', ['notebook', '--no-browser'], { cwd: editorDir });
 
-  let baseUrl: string | undefined;
-  let token: any;
-  // Handle output - for some weird reason, it runs on stderr
-  jupyter.stderr.on('data', data => {
-    let output = data.toString();
-    console.log('INIT SEQUENCE:', output);
+  // let baseUrl: string | undefined;
+  // let token: any;
+  // // Handle output - for some weird reason, it runs on stderr
+  // jupyter.stderr.on('data', data => {
+  //   let output = data.toString();
+  //   console.log('INIT SEQUENCE:', output);
 
-    // Parse output for URL and token
-    let urlMatch = output.match(/http:\/\/localhost:\d+\/\?token=\w+/);
-    if (urlMatch) {
-      let url = new URL(urlMatch[0]);
-      baseUrl = url.origin;
-      token = url.searchParams.get('token');
-      console.log('INIT SEQUENCE - Jupyter server base URL:', baseUrl);
-      console.log('INIT SEQUENCE - Jupyter server token:', token);
+  //   // Parse output for URL and token
+  //   let urlMatch = output.match(/http:\/\/localhost:\d+\/\?token=\w+/);
+  //   if (urlMatch) {
+  //     let url = new URL(urlMatch[0]);
+  //     baseUrl = url.origin;
+  //     token = url.searchParams.get('token');
+  //     console.log('INIT SEQUENCE - Jupyter server base URL:', baseUrl);
+  //     console.log('INIT SEQUENCE - Jupyter server token:', token);
 
-      // Call the openAndExecuteCell function after getting the token
-      // openAndExecuteCell(baseUrl, token, notebook, editorPath);
-    }
-  });
+  //     // Call the openAndExecuteCell function after getting the token
+  //     // openAndExecuteCell(baseUrl, token, notebook, editorPath);
+  //   }
+  // });
 
-  // Handle stdout
-  jupyter.stdout.on('data', data => {
-    console.log('Jupyter Server threw stout:', data.toString());
-  });
+  // // Handle stdout
+  // jupyter.stdout.on('data', data => {
+  //   console.log('Jupyter Server threw stout:', data.toString());
+  // });
 
-  // Check if the process exited normally
-  jupyter.on('exit', code => {
-    console.log("process exited")
-    if (code !== 0) {
-      console.log(`Jupyter Eito process exited with code ${code}`);
-    }
-  });
+  // // Check if the process exited normally
+  // jupyter.on('exit', code => {
+  //   console.log("process exited")
+  //   if (code !== 0) {
+  //     console.log(`Jupyter Eito process exited with code ${code}`);
+  //   }
+  // });
 
-  console.log("Server connection");
-  // Create a server settings object
-  let serverSettings: ServerConnection.ISettings = ServerConnection.makeSettings({
-    baseUrl: baseUrl,
-    token: token,
-  });
+  // console.log("Server connection");
+  // // Create a server settings object
+  // let serverSettings: ServerConnection.ISettings = ServerConnection.makeSettings({
+  //   baseUrl: baseUrl,
+  //   token: token,
+  // });
 
-  console.log("Server connection object created");
-  // Create a service manager
-  let manager: ServiceManager.IManager = new ServiceManager({ serverSettings });
+  // console.log("Server connection object created");
+  // // Create a service manager
+  // let manager: ServiceManager.IManager = new ServiceManager({ serverSettings });
 
-  console.log("Created manager object");
+  // console.log("Created manager object");
 
-  // Start a new kernel
-  let model: Kernel.IModel;
-  manager.kernelspecs.ready.then(() => {
-    manager.kernels.startNew({ name: 'python3' })  // Change 'python3' to the name of your kernel
-      .then(kernel => {
-        model = kernel.model;
-        console.log('Kernel started:', kernel.id);
-      })
-      .catch(err => {
-        console.error('Failed to start kernel:', err);
-      });
-  });
+  // // Start a new kernel
+  // let model: Kernel.IModel;
+  // manager.kernelspecs.ready.then(() => {
+  //   manager.kernels.startNew({ name: 'python3' })  // Change 'python3' to the name of your kernel
+  //     .then(kernel => {
+  //       model = kernel.model;
+  //       console.log('Kernel started:', kernel.id);
+  //     })
+  //     .catch(err => {
+  //       console.error('Failed to start kernel:', err);
+  //     });
+  // });
 
-  console.log("Kernel started");
+  // console.log("Kernel started");
 
   /*
   === NOTEBOOK STRUCTURE ===
