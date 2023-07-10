@@ -4,18 +4,9 @@ import * as path from 'path';
 import axios from 'axios';
 
 const genCodeEndpoint = 'http://localhost:8080/code';
+const sumCodeEndpoint = 'http://localhost:8080/summarize';
 
-export const jupyter = async () => {
-
-  await readFirstMarkdownCell();
-
-};
-
-export async function initialWrite(code: string): Promise<void> {
-  console.log('dummy write')
-}
-
-export async function readFirstMarkdownCell(): Promise<void> {
+export async function jupyter(): Promise<void> {
 
   // Make sure a text editor is active
   if (!vscode.window.activeTextEditor) {
@@ -65,12 +56,15 @@ export async function readFirstMarkdownCell(): Promise<void> {
   const command = firstMarkdownCell.source[0].trim().split(' ').slice(1).join(' ');
   
   // Post the command to the endpoint and catch errors
-  let response: any;
   const temperature = 0.5;
-  
+  let codeOutput: any;
+  let codeSummary: any;
   try {
     console.log(`Posting command to endpoint... Command: ${command}`);
-    response = (await axios.post(genCodeEndpoint, {prompt: command, temperature: temperature}));
+    codeOutput = (await axios.post(genCodeEndpoint, {prompt: command, temperature: temperature})).data.response.choices[0].message.content;
+    console.log(`Code output: ${codeOutput}`);
+    codeSummary = (await axios.post(sumCodeEndpoint, {prompt: codeOutput, temperature: temperature})).data.response.choices[0].message.content;
+    console.log(`Code summary: ${codeSummary}`);
   } catch (error: any) {
     console.error("Error posting command to endpoint");
     if (error.response) {
@@ -84,16 +78,17 @@ export async function readFirstMarkdownCell(): Promise<void> {
     return;
   }
 
-  const codeOutput = response.data.response.choices[0].message.content;
   console.log("Successfully posted command to endpoint, writing to file...");
   console.log("=============================================================");
-  // Insert the body of the result into the code cell
+  // Insert the codeOutput into the code cell
   notebook.cells[notebook.cells.indexOf(firstMarkdownCell) + 1].source = codeOutput;
+
+  // Replace the markdown cell text with the codeSummary
+  notebook.cells[notebook.cells.indexOf(firstMarkdownCell)].source = codeSummary;
 
   const newFileContent = JSON.stringify(notebook, null, 2);
   fs.writeFileSync(document.uri.fsPath, newFileContent, 'utf8');
 }
-
 
 
 const parseDocumentToJson = (document: vscode.TextDocument) => {
