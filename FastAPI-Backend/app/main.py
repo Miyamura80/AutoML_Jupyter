@@ -94,7 +94,7 @@ async def generate_code(item: Item):
         "temperature": temperature,  # Temperature controls the degree of randomness in token selection.
         "max_output_tokens": 2048,  # Token limit determines the maximum amount of text output.
     }
-    content = f"Please write me pytorch code to {prompt}.Please only give code, and not comments or explanations."
+    content = f"Please write me pytorch code to {prompt}.Please only give code, and no comments or explanations."
 
     # Call the model
     response = llm_inference(parameters, content)
@@ -112,9 +112,9 @@ async def summarize_code(item: Item):
     prompt = item.prompt
     parameters = {
         "temperature": temperature,  # Temperature controls the degree of randomness in token selection.
-        "max_output_tokens": 2048,  # Token limit determines the maximum amount of text output.
+        "max_output_tokens": 100,  # Token limit determines the maximum amount of text output.
     }
-    content = f"Please summarize the pytorch code in {prompt}.Include formal specifications for classes and functions as well as a brief description of the code's purpose."
+    content = f"Please write a markdown title for pytorch code in {prompt}."
 
     # Call the model
     response = llm_inference(parameters, content)
