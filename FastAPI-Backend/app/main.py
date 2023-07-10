@@ -113,7 +113,7 @@ async def generate_code(item: Item):
     response = llm_inference(parameters, content)
 
     # Return the model's response
-    return {"response": response}
+    return {"response": response, "data": item.data}
 
 @app.post("/summarize")
 async def summarize_code(item: Item):
