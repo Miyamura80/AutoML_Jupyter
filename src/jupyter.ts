@@ -107,20 +107,8 @@ export async function jupyter(): Promise<void> {
 
   console.log("Found markdown cell with !auto-jupyter, executing...");
 
-  // Check if the next cell is a blank code cell and if not, insert a new code cell
-  const blankCodeCell = {
-    cell_type: 'code',
-    execution_count: null,
-    metadata: {},
-    outputs: [],
-    source: [],
-  }
-  if (notebook.cells.indexOf(firstMarkdownCell) === notebook.cells.length - 1) {
-    notebook.cells.push(blankCodeCell);
-  } else if (notebook.cells[notebook.cells.indexOf(firstMarkdownCell) + 1].cell_type !== 'code') {
-    // TODO: This overrwrites the next cell, but we should insert a new cell instead
-    notebook.cells.splice(notebook.cells.indexOf(firstMarkdownCell) + 1, 0, blankCodeCell)
-  } 
+  // Get the code from the code cell before the markdown cell
+  const data = notebook.cells[notebook.cells.indexOf(firstMarkdownCell) - 1].source;
 
   // Get the text after the "!auto-jupyter" string
   const command = firstMarkdownCell.source[0].trim().split(' ').slice(1).join(' ');
@@ -131,7 +119,7 @@ export async function jupyter(): Promise<void> {
   let codeSummary: any;
   try {
     console.log(`Posting command to endpoint... Command: ${command}`);
-    codeOutput = (await axios.post(genCodeEndpoint, {prompt: command, temperature: temperature})).data.response.choices[0].message.content;
+    codeOutput = (await axios.post(genCodeEndpoint, {prompt: command, data: data, temperature: temperature})).data.response.choices[0].message.content;
     console.log(`Code output: ${codeOutput}`);
     codeSummary = (await axios.post(sumCodeEndpoint, {prompt: codeOutput, temperature: temperature})).data.response.choices[0].message.content;
     console.log(`Code summary: ${codeSummary}`);

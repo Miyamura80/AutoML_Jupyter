@@ -10,6 +10,7 @@ import json
 import os
 import openai
 from pydantic import BaseModel
+from typing import Optional, List
 
 # Load the service account json file
 # Update the values in the json file with your own
@@ -81,6 +82,7 @@ async def get_documentation():
 class Item(BaseModel):
     prompt: str
     temperature: float = 0.5
+    data: Optional[List[str]]
 
 @app.post("/code")
 async def generate_code(item: Item):
@@ -94,8 +96,19 @@ async def generate_code(item: Item):
         "temperature": temperature,  # Temperature controls the degree of randomness in token selection.
         "max_output_tokens": 2048,  # Token limit determines the maximum amount of text output.
     }
-    content = f"Please write me pytorch code to {prompt}.Please only give code, and no comments or explanations."
 
+    dataPrompt = ""
+    if (item.data is not None):
+        data = item.data
+        allData = ''.join(data)
+        if "X =" in allData and "y =" in allData:
+            exec(allData, globals())
+            dataPrompt = f"The code should be compatible with input shape {X.shape[1:]} and output shape {y.shape[1:]}."
+
+
+    content = f"Please write me pytorch code to {prompt}.Please only give code, and no comments or explanations. {dataPrompt}"
+
+    print("content: ", content)
     # Call the model
     response = llm_inference(parameters, content)
 
