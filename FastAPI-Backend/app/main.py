@@ -106,7 +106,7 @@ async def generate_code(item: Item):
             dataPrompt = f"The code should be compatible with input shape {X.shape[1:]} and output shape {y.shape[1:]}."
 
 
-    content = f"Please write me pytorch code to {prompt}.Please only give code, and no comments or explanations. {dataPrompt}"
+    content = f"Please write me pytorch code to {prompt}.Please only give code, and no comments, examples, or explanations. {dataPrompt}"
 
     print("content: ", content)
     # Call the model
