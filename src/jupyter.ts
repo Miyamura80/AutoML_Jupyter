@@ -25,18 +25,25 @@ export async function readFirstMarkdownCell(): Promise<void> {
     return;
   }
 
+  const document = vscode.window.activeTextEditor?.document;
   const editorPath = vscode.window.activeTextEditor.document.uri.fsPath;
+  // const editorDir = vscode.workspace.getWorkspaceFolder(document.uri);
+  const editorDir = path.dirname(editorPath);
+  const notebook: any = parseDocumentToJson(document!);
+
+  console.log("Printing notebook:");
+  console.log(notebook);
 
   console.log("Server connection");
   // Start a new Jupyter server
-  let jupyter = spawn('jupyter', ['notebook', '--no-browser']);
+  let jupyter = await spawn('jupyter', ['notebook', '--no-browser'], { cwd: editorDir });
 
   let baseUrl: string | undefined;
   let token: any;
   // Handle output - for some weird reason, it runs on stderr
   jupyter.stderr.on('data', data => {
     let output = data.toString();
-    console.log('Getting data from stderr containing info:', output);
+    console.log('INIT SEQUENCE:', output);
 
     // Parse output for URL and token
     let urlMatch = output.match(/http:\/\/localhost:\d+\/\?token=\w+/);
@@ -44,11 +51,11 @@ export async function readFirstMarkdownCell(): Promise<void> {
       let url = new URL(urlMatch[0]);
       baseUrl = url.origin;
       token = url.searchParams.get('token');
-      console.log('Jupyter server base URL:', baseUrl);
-      console.log('Jupyter server token:', token);
+      console.log('INIT SEQUENCE - Jupyter server base URL:', baseUrl);
+      console.log('INIT SEQUENCE - Jupyter server token:', token);
 
       // Call the openAndExecuteCell function after getting the token
-      openAndExecuteCell(baseUrl, token, editorPath);
+      // openAndExecuteCell(baseUrl, token, notebook, editorPath);
     }
   });
 
@@ -92,13 +99,6 @@ export async function readFirstMarkdownCell(): Promise<void> {
   });
 
   console.log("Kernel started");
-  // Get the active document
-  const document = vscode.window.activeTextEditor?.document;
-
-  const notebook: any = parseDocumentToJson(document!);
-
-  console.log("Printing notebook:");
-  console.log(notebook);
 
   /*
   === NOTEBOOK STRUCTURE ===
@@ -194,58 +194,40 @@ const parseDocumentToJson = (document: vscode.TextDocument) => {
 }
 
 
-interface Cell {
-  id: string;
-  source: string[];
-}
+// async function openAndExecuteCell(baseUrl: string, token: string | null, notebook: any, editorPath: string): Promise<void> {
+//   try {
 
-interface NotebookContent {
-  cells: Cell[];
-}
+//     // 1. Create a new session
+//     console.log('CREATE SESSION - Creating session...');
+//     let response = await axios.post(
+//       `${baseUrl}/api/sessions`,
+//       {
+//         notebook: { path: editorPath }, // replace with your notebook file path
+//         kernel: { name: 'python3' } // replace with your kernel name
+//       },
+//       {
+//         headers: { Authorization: `token ${token}` },
+//       }
+//     );
+//     console.log('CREATE SESSION - Session created:', response.data);
 
-interface NotebookResponse {
-  data: {
-    content: NotebookContent;
-    id: string;
-  }
-}
+//     const sessionId = response.data.id;
 
-interface ExecutionResponse {
-  data: any;
-}
+//     // 2. Execute code in the newly created session
+//     const code = 'print("Hello, World!")'; // replace with the code of the cell you want to execute
 
-async function openAndExecuteCell(baseUrl: string, token: string | null, filepath: string): Promise<void> {
-  try {
+//     response = await axios.post(
+//       `${baseUrl}/api/sessions/${sessionId}/execute`,
+//       { code },
+//       {
+//         headers: { Authorization: `token ${token}` },
+//       }
+//     );
 
-      // Name of the notebook
-      // const notebookName: string = 'test.ipynb';
-      const notebookName: string = filepath;
-      console.log('Notebook name:', notebookName);
+//     console.log('EXECUTE CODE - Code executed:', response.data);
 
-      // Get the content of the existing notebook
-      const response: AxiosResponse<NotebookResponse> = await axios.get(`${baseUrl}/api/contents${notebookName}`, {
-          headers: {
-              'authorization': `token ${token}`
-          }
-      });
-
-      // Get the cell id of the cell to execute
-      const cellId: string = response.data.data.content.cells[0].id; // Replace 0 with the index of the cell you want to execute
-
-      // Execute the cell
-      const execResponse: AxiosResponse<ExecutionResponse> = await axios.post(`${baseUrl}/api/sessions/${response.data.data.id}/execute`, {
-          code: response.data.data.content.cells[0].source.join('\n'),
-          silent: false,
-          store_history: true,
-          stop_on_error: true
-      }, {
-          headers: {
-              'authorization': `token ${token}`
-          }
-      });
-
-      console.log('Cell execution result:', execResponse.data);
-  } catch (error) {
-      console.error('Error executing cell:', error);
-  }
-}
+//   } catch (error: any) {
+//       console.error('Error executing cell:', error);
+//       console.error(error.arg1.stack);
+//   }
+// }
